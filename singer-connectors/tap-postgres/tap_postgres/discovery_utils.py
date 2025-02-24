@@ -223,7 +223,7 @@ def schema_for_column_datatype(col):
         schema['properties'] = {}
         return schema
 
-    if data_type == 'citext':
+    if 'citext' in data_type:
         schema['type'] = nullable_column('string', col.is_primary_key)
         return schema
 
