@@ -252,7 +252,7 @@ class DbSync:
             stream_schema_name = stream_name_to_dict(stream_name)['schema_name']
             stream_table_name = stream_name_to_dict(stream_name)['table_name']
             if config_schema_mapping and stream_schema_name in config_schema_mapping:
-                self.schema_name = config_schema_mapping[stream_schema_name].get('target_schema')
+                self.schema_name = config_schema_mapping[stream_schema_name].get('target_schema', config_default_target_schema)
 
                 # Get indices to create for the target table
                 indices = config_schema_mapping[stream_schema_name].get('indices', {})
