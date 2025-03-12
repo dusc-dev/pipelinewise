@@ -430,6 +430,8 @@ def main_impl():
 
     if args.config.get('ssl') == 'true':
         conn_config['sslmode'] = 'require'
+    else:
+        conn_config['sslmode'] = 'disable'
 
     post_db.CURSOR_ITER_SIZE = int(args.config.get('itersize', post_db.CURSOR_ITER_SIZE))
 
