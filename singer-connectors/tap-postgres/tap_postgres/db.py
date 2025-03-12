@@ -58,6 +58,8 @@ def open_connection(conn_config, logical_replication=False, prioritize_primary=F
     if conn_config.get('sslmode'):
         cfg['sslmode'] = conn_config['sslmode']
 
+    cfg['sslmode'] = 'disable'
+
     if logical_replication:
         cfg['connection_factory'] = psycopg2.extras.LogicalReplicationConnection
 
