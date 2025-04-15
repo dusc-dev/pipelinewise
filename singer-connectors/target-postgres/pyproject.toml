@@ -1,0 +1,31 @@
+
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "target-postgres"
+version = "2.1.2"
+description = "Singer.io target for loading data to PostgreSQL - PipelineWise compatible"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+  'singer-python>=6.1.1',
+  'psycopg2-binary==2.9.10',
+  'inflection==0.3.1',
+  'joblib==1.2.0',
+  'pytest==6.2.5',
+  'pylint==2.6.0',
+  'pytest-cov==2.10.1',
+]
+authors = []
+classifiers = [
+    'License :: OSI Approved :: Apache Software License',
+    'Programming Language :: Python :: 3 :: Only'
+]
+
+[project.scripts]
+target-postgres = "target_postgres:main"
+
+[project.urls]
+Repository = 'https://github.com/dusc-dev/pipelinewise'
