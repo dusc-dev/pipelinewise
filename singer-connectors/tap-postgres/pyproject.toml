@@ -29,3 +29,8 @@ tap-postgres = "tap_postgres:main"
 
 [project.urls]
 Repository = 'https://github.com/dusc-dev/pipelinewise'
+
+[tool.uv]
+override-dependencies = [
+  "jsonschema>=4.23.0"
+]
