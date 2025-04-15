@@ -21,7 +21,7 @@ from tap_postgres.stream_utils import (
     dump_catalog, clear_state_on_replication_change,
     is_selected_via_metadata, refresh_streams_schema, any_logical_streams)
 
-LOGGER = singer.get_logger('tap_postgres')
+LOGGER = singer.get_logger()
 
 REQUIRED_CONFIG_KEYS = [
     'dbname',

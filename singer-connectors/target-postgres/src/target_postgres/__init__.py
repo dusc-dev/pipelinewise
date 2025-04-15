@@ -16,7 +16,7 @@ from singer import get_logger
 
 from target_postgres.db_sync import DbSync
 
-LOGGER = get_logger('target_postgres')
+LOGGER = get_logger()
 
 DEFAULT_BATCH_SIZE_ROWS = 100000
 DEFAULT_PARALLELISM = 0  # 0 The number of threads used to flush tables

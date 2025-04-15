@@ -71,7 +71,7 @@ def column_type(schema_property):
     elif 'boolean' in property_type:
         col_type = 'boolean'
 
-    get_logger('target_postgres').debug("schema_property: %s -> col_type: %s", schema_property, col_type)
+    get_logger().debug("schema_property: %s -> col_type: %s", schema_property, col_type)
 
     return col_type
 
@@ -208,7 +208,7 @@ class DbSync:
         self.stream_schema_message = stream_schema_message
 
         # logger to be used across the class's methods
-        self.logger = get_logger('target_postgres')
+        self.logger = get_logger()
 
         # Validate connection configuration
         config_errors = validate_config(connection_config)

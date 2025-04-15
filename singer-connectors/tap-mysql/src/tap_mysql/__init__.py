@@ -16,7 +16,7 @@ from tap_mysql.sync_strategies import common
 from tap_mysql.sync_strategies import full_table
 from tap_mysql.sync_strategies import incremental
 
-LOGGER = get_logger('tap_mysql')
+LOGGER = get_logger()
 
 REQUIRED_CONFIG_KEYS = [
     'host',

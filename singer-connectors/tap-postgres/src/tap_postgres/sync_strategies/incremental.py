@@ -11,7 +11,7 @@ from singer import metrics
 import tap_postgres.db as post_db
 
 
-LOGGER = singer.get_logger('tap_postgres')
+LOGGER = singer.get_logger()
 
 UPDATE_BOOKMARK_PERIOD = 10000
 
@@ -137,7 +137,7 @@ def _get_select_sql(params):
     SELECT {','.join(escaped_columns)}
     FROM (
         SELECT *
-        FROM {post_db.fully_qualified_table_name(schema_name, table_name)} 
+        FROM {post_db.fully_qualified_table_name(schema_name, table_name)}
         {where_statement}
         ORDER BY {replication_key} ASC {limit_statement}
     ) pg_speedup_trick;"""

@@ -30,7 +30,7 @@ from tap_mysql.discover_utils import discover_catalog, desired_columns, should_r
 from tap_mysql.stream_utils import write_schema_message
 from tap_mysql.sync_strategies import common
 
-LOGGER = singer.get_logger('tap_mysql')
+LOGGER = singer.get_logger()
 
 SDC_DELETED_AT = "_sdc_deleted_at"
 UPDATE_BOOKMARK_PERIOD = 1000

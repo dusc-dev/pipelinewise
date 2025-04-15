@@ -10,7 +10,7 @@ from tap_mysql.sync_strategies import common
 
 from tap_mysql.connection import connect_with_backoff
 
-LOGGER = singer.get_logger('tap_mysql')
+LOGGER = singer.get_logger()
 
 
 def generate_bookmark_keys(catalog_entry):

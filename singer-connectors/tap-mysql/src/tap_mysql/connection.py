@@ -8,7 +8,7 @@ import singer
 
 from pymysql.constants import CLIENT
 
-LOGGER = singer.get_logger('tap_mysql')
+LOGGER = singer.get_logger()
 
 CONNECT_TIMEOUT_SECONDS = 30
 

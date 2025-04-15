@@ -11,7 +11,7 @@ import singer
 from typing import List
 from dateutil.parser import parse
 
-LOGGER = singer.get_logger('tap_postgres')
+LOGGER = singer.get_logger()
 
 CURSOR_ITER_SIZE = 20000
 

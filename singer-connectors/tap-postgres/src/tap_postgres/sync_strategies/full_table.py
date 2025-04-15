@@ -10,7 +10,7 @@ from singer import metrics
 
 import tap_postgres.db as post_db
 
-LOGGER = singer.get_logger('tap_postgres')
+LOGGER = singer.get_logger()
 
 UPDATE_BOOKMARK_PERIOD = 1000
 

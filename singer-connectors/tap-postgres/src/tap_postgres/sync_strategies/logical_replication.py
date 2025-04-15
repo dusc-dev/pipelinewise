@@ -18,7 +18,7 @@ import tap_postgres.db as post_db
 import tap_postgres.sync_strategies.common as sync_common
 from tap_postgres.stream_utils import refresh_streams_schema
 
-LOGGER = singer.get_logger('tap_postgres')
+LOGGER = singer.get_logger()
 
 UPDATE_BOOKMARK_PERIOD = 10000
 FALLBACK_DATETIME = '9999-12-31T23:59:59.999+00:00'

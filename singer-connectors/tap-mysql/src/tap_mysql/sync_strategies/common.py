@@ -9,7 +9,7 @@ from singer import metadata, utils, metrics
 
 from tap_mysql.stream_utils import get_key_properties
 
-LOGGER = singer.get_logger('tap_mysql')
+LOGGER = singer.get_logger()
 
 
 def escape(string):
