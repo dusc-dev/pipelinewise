@@ -1,0 +1,30 @@
+
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tap-postgres"
+version = "2.1.0"
+description = "Singer.io tap for loading data from PostgreSQL - PipelineWise compatible"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+  'singer-python>=6.1.1',
+  'psycopg2-binary==2.9.10',
+  'strict-rfc3339==0.7',
+  'pytest>=8.3.5',
+  'pylint>=3.3.6',
+  'pytest-cov>=6.1.1'
+]
+authors = []
+classifiers = [
+    'License :: OSI Approved :: Apache Software License',
+    'Programming Language :: Python :: 3 :: Only'
+]
+
+[project.scripts]
+tap-postgres = "tap_postgres:main"
+
+[project.urls]
+Repository = 'https://github.com/dusc-dev/pipelinewise'
