@@ -31,6 +31,14 @@ REQUIRED_CONFIG_KEYS = [
     'password'
 ]
 
+# Hack psycopg2 to support dates to strings to avoid large dates blowing up the tap
+DATE2STR = psycopg2.extensions.new_type(
+    psycopg2.extensions.DATE.values,
+    'DATE2STR',
+    lambda value, curs:
+        str(value) if value is not None else None)
+
+psycopg2.extensions.register_type(DATE2STR)
 
 def do_discovery(conn_config):
     """
