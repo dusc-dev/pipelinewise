@@ -227,6 +227,13 @@ def selected_value_to_singer_value_impl(elem, og_sql_datatype, conn_info):
 
             return elem.isoformat() + '+00:00'
 
+        if isinstance(elem, int):
+            dt = datetime.datetime.fromtimestamp(elem)
+            if dt > datetime.datetime(9999, 12, 31, 23, 59, 59, 999000):
+                return FALLBACK_DATETIME
+
+            return dt.isoformat() + '+00:00'
+        
         with warnings.catch_warnings():
             # we need to catch and handle this warning
             # github.com/
