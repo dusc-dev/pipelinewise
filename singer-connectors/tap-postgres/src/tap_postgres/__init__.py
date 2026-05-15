@@ -284,13 +284,49 @@ def register_type_adapters(conn_config):
                         (enum_oid,), f'ENUM_{enum_oid}[]', psycopg2.STRING))
 
 
+def _stream_sort_key(stream):
+    """Sort key honouring an optional ``priority`` metadata field.
+
+    The historical behaviour of ``do_sync`` was to emit selected streams
+    alphabetically by ``tap_stream_id``. That breaks pipelines whose
+    downstream loader needs streams to arrive in a specific dependency
+    order (e.g. parent objects before children whose associations look
+    them up). Some Singer loaders cannot reorder records they have
+    already consumed, so the order has to be enforced at the tap.
+
+    Operators can now set an integer ``priority`` in a stream's
+    *table-level* (empty-breadcrumb) metadata. Streams with a lower
+    ``priority`` are emitted first; streams sharing a priority retain
+    the historical alphabetical-by-``tap_stream_id`` ordering. A stream
+    that does not set ``priority`` defaults to ``0`` -- so any catalog
+    in which no stream sets ``priority`` produces byte-identical
+    behaviour to the pre-change tap (purely alphabetical).
+
+    Set the metadata via meltano (table-key matched by ``tap_stream_id``):
+
+        metadata:
+          public-foo: {priority: 0}
+          public-bar: {priority: 1}
+
+    or directly in a Singer catalog file:
+
+        {"breadcrumb": [], "metadata": {"priority": 1}}
+    """
+    priority = 0
+    for entry in (stream.get('metadata') or []):
+        if entry.get('breadcrumb') == []:
+            priority = (entry.get('metadata') or {}).get('priority', 0) or 0
+            break
+    return (priority, stream['tap_stream_id'])
+
+
 def do_sync(conn_config, catalog, default_replication_method, state, state_file=None):
     """
     Orchestrates sync of all streams
     """
     currently_syncing = singer.get_currently_syncing(state)
     streams = list(filter(is_selected_via_metadata, catalog['streams']))
-    streams.sort(key=lambda s: s['tap_stream_id'])
+    streams.sort(key=_stream_sort_key)
     LOGGER.info("Selected streams: %s ", [s['tap_stream_id'] for s in streams])
     if any_logical_streams(streams, default_replication_method):
         # Use of logical replication requires fetching an lsn
