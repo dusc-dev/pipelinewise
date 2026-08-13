@@ -132,77 +132,111 @@ def tuples_to_map(accum, t):
     return accum
 
 
+# Single reused connection for the array/hstore literal-parsing helpers below.
+#
+# create_array_elem() and create_hstore_elem() lean on Postgres to turn an
+# array/hstore literal into a Python value. They used to open a brand-new
+# connection for *every* such value (and psycopg2's `with conn:` only ends the
+# transaction, it does not close the socket, so they piled up until GC). On
+# high-array-volume WAL segments that exhausted the source ephemeral-port range
+# against a single pg host -- every short-lived socket parking in TIME_WAIT --
+# and connect() started failing with EADDRNOTAVAIL ("Cannot assign requested
+# address"), failing the sync deterministically. Reusing one autocommit
+# connection keeps this work to a single socket.
+_SHARED_PARSE_CONN = None
+
+
+def _shared_parse_connection(conn_info):
+    global _SHARED_PARSE_CONN
+    if _SHARED_PARSE_CONN is None or _SHARED_PARSE_CONN.closed:
+        conn = post_db.open_connection(conn_info, False, True)
+        conn.autocommit = True
+        _SHARED_PARSE_CONN = conn
+    return _SHARED_PARSE_CONN
+
+
+def _fetchone_on_shared_parse_conn(conn_info, query):
+    global _SHARED_PARSE_CONN
+    for attempt in (1, 2):
+        conn = _shared_parse_connection(conn_info)
+        try:
+            with conn.cursor() as cur:
+                cur.execute(query)
+                return cur.fetchone()[0]
+        except psycopg2.Error:
+            # The reused connection may have been dropped server-side; discard
+            # it and retry once on a fresh one before propagating.
+            try:
+                conn.close()
+            except psycopg2.Error:
+                pass
+            _SHARED_PARSE_CONN = None
+            if attempt == 2:
+                raise
+
+
 def create_hstore_elem_query(elem):
     return sql.SQL("SELECT hstore_to_array({})").format(sql.Literal(elem))
 
 
 def create_hstore_elem(conn_info, elem):
-    with post_db.open_connection(conn_info, False, True) as conn:
-        with conn.cursor() as cur:
-            query = create_hstore_elem_query(elem)
-            cur.execute(query)
-            res = cur.fetchone()[0]
-            hstore_elem = reduce(tuples_to_map, [res[i:i + 2] for i in range(0, len(res), 2)], {})
-            return hstore_elem
+    res = _fetchone_on_shared_parse_conn(conn_info, create_hstore_elem_query(elem))
+    return reduce(tuples_to_map, [res[i:i + 2] for i in range(0, len(res), 2)], {})
 
 
 def create_array_elem(elem, sql_datatype, conn_info):
     if elem is None:
         return None
 
-    with post_db.open_connection(conn_info, False, True) as conn:
-        with conn.cursor() as cur:
-            if sql_datatype == 'bit[]':
-                cast_datatype = 'boolean[]'
-            elif sql_datatype == 'boolean[]':
-                cast_datatype = 'boolean[]'
-            elif sql_datatype == 'character varying[]':
-                cast_datatype = 'character varying[]'
-            elif sql_datatype == 'cidr[]':
-                cast_datatype = 'cidr[]'
-            elif sql_datatype == 'citext[]':
-                cast_datatype = 'text[]'
-            elif sql_datatype == 'date[]':
-                cast_datatype = 'text[]'
-            elif sql_datatype == 'double precision[]':
-                cast_datatype = 'double precision[]'
-            elif sql_datatype == 'hstore[]':
-                cast_datatype = 'text[]'
-            elif sql_datatype == 'integer[]':
-                cast_datatype = 'integer[]'
-            elif sql_datatype == 'inet[]':
-                cast_datatype = 'inet[]'
-            elif sql_datatype == 'json[]':
-                cast_datatype = 'text[]'
-            elif sql_datatype == 'jsonb[]':
-                cast_datatype = 'text[]'
-            elif sql_datatype == 'macaddr[]':
-                cast_datatype = 'macaddr[]'
-            elif sql_datatype == 'money[]':
-                cast_datatype = 'text[]'
-            elif sql_datatype == 'numeric[]':
-                cast_datatype = 'text[]'
-            elif sql_datatype == 'real[]':
-                cast_datatype = 'real[]'
-            elif sql_datatype == 'smallint[]':
-                cast_datatype = 'smallint[]'
-            elif sql_datatype == 'text[]':
-                cast_datatype = 'text[]'
-            elif sql_datatype in ('time without time zone[]', 'time with time zone[]'):
-                cast_datatype = 'text[]'
-            elif sql_datatype in ('timestamp with time zone[]', 'timestamp without time zone[]'):
-                cast_datatype = 'text[]'
-            elif sql_datatype == 'uuid[]':
-                cast_datatype = 'text[]'
+    if sql_datatype == 'bit[]':
+        cast_datatype = 'boolean[]'
+    elif sql_datatype == 'boolean[]':
+        cast_datatype = 'boolean[]'
+    elif sql_datatype == 'character varying[]':
+        cast_datatype = 'character varying[]'
+    elif sql_datatype == 'cidr[]':
+        cast_datatype = 'cidr[]'
+    elif sql_datatype == 'citext[]':
+        cast_datatype = 'text[]'
+    elif sql_datatype == 'date[]':
+        cast_datatype = 'text[]'
+    elif sql_datatype == 'double precision[]':
+        cast_datatype = 'double precision[]'
+    elif sql_datatype == 'hstore[]':
+        cast_datatype = 'text[]'
+    elif sql_datatype == 'integer[]':
+        cast_datatype = 'integer[]'
+    elif sql_datatype == 'inet[]':
+        cast_datatype = 'inet[]'
+    elif sql_datatype == 'json[]':
+        cast_datatype = 'text[]'
+    elif sql_datatype == 'jsonb[]':
+        cast_datatype = 'text[]'
+    elif sql_datatype == 'macaddr[]':
+        cast_datatype = 'macaddr[]'
+    elif sql_datatype == 'money[]':
+        cast_datatype = 'text[]'
+    elif sql_datatype == 'numeric[]':
+        cast_datatype = 'text[]'
+    elif sql_datatype == 'real[]':
+        cast_datatype = 'real[]'
+    elif sql_datatype == 'smallint[]':
+        cast_datatype = 'smallint[]'
+    elif sql_datatype == 'text[]':
+        cast_datatype = 'text[]'
+    elif sql_datatype in ('time without time zone[]', 'time with time zone[]'):
+        cast_datatype = 'text[]'
+    elif sql_datatype in ('timestamp with time zone[]', 'timestamp without time zone[]'):
+        cast_datatype = 'text[]'
+    elif sql_datatype == 'uuid[]':
+        cast_datatype = 'text[]'
 
-            else:
-                # custom datatypes like enums
-                cast_datatype = 'text[]'
+    else:
+        # custom datatypes like enums
+        cast_datatype = 'text[]'
 
-            sql_stmt = f"""SELECT $stitch_quote${elem}$stitch_quote$::{cast_datatype}"""
-            cur.execute(sql_stmt)
-            res = cur.fetchone()[0]
-            return res
+    sql_stmt = f"""SELECT $stitch_quote${elem}$stitch_quote$::{cast_datatype}"""
+    return _fetchone_on_shared_parse_conn(conn_info, sql_stmt)
 
 
 # pylint: disable=too-many-branches,too-many-nested-blocks,too-many-return-statements
@@ -297,7 +331,13 @@ def selected_value_to_singer_value_impl(elem, og_sql_datatype, conn_info):
         try:
             return parse(elem).isoformat() + "+00:00"
         except ValueError as e:
-            match = re.match(r'year (\d+) is out of range', str(e))
+            # datetime cannot represent years past 9999, but Postgres can. The
+            # ValueError wording differs across Python versions:
+            #   <= 3.13: "year 10000 is out of range"
+            #   >= 3.14: "year must be in 1..9999, not 10000"
+            message = str(e)
+            match = re.search(r'year (\d+) is out of range', message) \
+                or re.search(r'year must be in 1\.\.9999, not (\d+)', message)
             if match and int(match.group(1)) > 9999:
                 LOGGER.warning('datetimes cannot handle years past 9999, returning %s for %s',
                                FALLBACK_DATE, elem)
