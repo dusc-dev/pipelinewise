@@ -331,7 +331,13 @@ def selected_value_to_singer_value_impl(elem, og_sql_datatype, conn_info):
         try:
             return parse(elem).isoformat() + "+00:00"
         except ValueError as e:
-            match = re.match(r'year (\d+) is out of range', str(e))
+            # datetime cannot represent years past 9999, but Postgres can. The
+            # ValueError wording differs across Python versions:
+            #   <= 3.13: "year 10000 is out of range"
+            #   >= 3.14: "year must be in 1..9999, not 10000"
+            message = str(e)
+            match = re.search(r'year (\d+) is out of range', message) \
+                or re.search(r'year must be in 1\.\.9999, not (\d+)', message)
             if match and int(match.group(1)) > 9999:
                 LOGGER.warning('datetimes cannot handle years past 9999, returning %s for %s',
                                FALLBACK_DATE, elem)

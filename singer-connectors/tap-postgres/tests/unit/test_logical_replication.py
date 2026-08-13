@@ -624,7 +624,7 @@ class TestLogicalReplication(unittest.TestCase):
         with self.assertLogs(level='DEBUG') as foo_log:
             actual_stream = logical_replication.add_automatic_properties(stream=stream, debug_lsn=False)
             self.assertDictEqual(expected_stream, actual_stream)
-            self.assertEqual(['DEBUG:tap_postgres:debug_lsn is OFF'], foo_log.output)
+            self.assertEqual(['DEBUG:root:debug_lsn is OFF'], foo_log.output)
 
     def test_add_automatic_properties_if_debug_lsn_is_on(self):
         """Test if add_automatic_property returns expected value if debug_lsn is on"""
@@ -643,7 +643,7 @@ class TestLogicalReplication(unittest.TestCase):
         with self.assertLogs(level='DEBUG') as foo_log:
             actual_stream = logical_replication.add_automatic_properties(stream=stream, debug_lsn=True)
             self.assertDictEqual(expected_stream, actual_stream)
-            self.assertEqual(['DEBUG:tap_postgres:debug_lsn is ON'], foo_log.output)
+            self.assertEqual(['DEBUG:root:debug_lsn is ON'], foo_log.output)
 
     def test_lsn_to_int_return_none_if_lsn_is_none(self):
         """Test lsn_to_int if lsn is None"""
@@ -1196,7 +1196,7 @@ class TestLogicalReplication(unittest.TestCase):
         mocked_connect.return_value.cursor.return_value.read_message.return_value = test_message()
 
         mocked_locate_rep_slot.return_value = 'mocked_value_for_replication_slot'
-        expected_log_message = 'INFO:tap_postgres:Breaking - latest wal message ' \
+        expected_log_message = 'INFO:root:Breaking - latest wal message ' \
                                f'{logical_replication.int_to_lsn(msg_data_start)} is' \
                                f' past end_lsn {logical_replication.int_to_lsn(end_lsn)}'
         with self.assertLogs() as captured_log:
