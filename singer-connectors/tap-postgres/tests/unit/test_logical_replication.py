@@ -690,7 +690,7 @@ class TestLogicalReplication(unittest.TestCase):
     @patch("psycopg2.connect")
     def test_create_hstore_elem(self, mocked_connect):
         """Test if the output of create_hstore_elem is as expected"""
-        mocked_cursor = mocked_connect.return_value.__enter__.return_value.cursor
+        mocked_cursor = mocked_connect.return_value.cursor
         mocked_fetchone = mocked_cursor.return_value.__enter__.return_value.fetchone
         mocked_fetchone.return_value = (['foo', 'bar'],)
         elem = 'foo=>bar'
@@ -701,7 +701,7 @@ class TestLogicalReplication(unittest.TestCase):
     @patch("psycopg2.connect")
     def test_create_array_elem(self, mocked_connect):
         """Test if the output of create_array_elem is as expected"""
-        mocked_cursor = mocked_connect.return_value.__enter__.return_value.cursor
+        mocked_cursor = mocked_connect.return_value.cursor
         mocked_fetchone = mocked_cursor.return_value.__enter__.return_value.fetchone
         test_values = [('foo', '{bar}', ['bar']),
                        ('bit[]', {1}, [True]),
@@ -747,7 +747,7 @@ class TestLogicalReplication(unittest.TestCase):
     @patch("psycopg2.connect")
     def test_selected_value_to_singer_value(self, mocked_connect):
         """Test if selected_value_to_singer_value returns expected value"""
-        mocked_cursor = mocked_connect.return_value.__enter__.return_value.cursor
+        mocked_cursor = mocked_connect.return_value.cursor
         mocked_fetchone = mocked_cursor.return_value.__enter__.return_value.fetchone
         mocked_fetchone.return_value = (['foo'],)
         test_values = [
@@ -912,7 +912,7 @@ class TestLogicalReplication(unittest.TestCase):
     @patch("psycopg2.connect")
     def test_impl_with_sql_datatype_is_hstore(self, mocked_connect):
         """Test selected_value_to_singer_value_impl if datatype is hstore"""
-        mocked_cursor = mocked_connect.return_value.__enter__.return_value.cursor
+        mocked_cursor = mocked_connect.return_value.cursor
         mocked_fetchone = mocked_cursor.return_value.__enter__.return_value.fetchone
         mocked_fetchone.return_value = (['1', '0', '2', '1'],)
         og_sql_datatype = 'hstore'
