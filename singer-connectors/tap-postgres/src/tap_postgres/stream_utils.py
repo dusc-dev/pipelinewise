@@ -85,11 +85,26 @@ def refresh_streams_schema(conn_config: Dict, streams: List[Dict]):
             # so let's copy those from the original stream object
             md_map = metadata.to_map(stream['metadata'])
             meta = md_map.get(())
+            held_back = []
 
             for idx_met, metadatum in enumerate(new_discovery[stream['tap_stream_id']]['metadata']):
-                if not metadatum['breadcrumb']:
+                breadcrumb = tuple(metadatum['breadcrumb'])
+                if not breadcrumb:
                     meta.update(new_discovery[stream['tap_stream_id']]['metadata'][idx_met]['metadata'])
                     new_discovery[stream['tap_stream_id']]['metadata'][idx_met]['metadata'] = meta
+                elif breadcrumb in md_map:
+                    # Selection comes from the catalog, not discovery; keep column refusals in force.
+                    if 'selected' in md_map[breadcrumb]:
+                        metadatum['metadata']['selected'] = md_map[breadcrumb]['selected']
+                else:
+                    # Unknown to the catalog, so nothing has decided it may sync: fail closed until the
+                    # next run's catalog does.
+                    metadatum['metadata']['selected'] = False
+                    held_back.append(breadcrumb[-1])
+
+            if held_back:
+                LOGGER.info('Holding back columns new since the catalog was made on table %s until the next run: %s',
+                            stream['table_name'], ', '.join(sorted(held_back)))
 
             # 2nd step: now copy all the metadata from the updated new discovery to the original stream
             streams[idx]['metadata'] = copy.deepcopy(new_discovery[stream['tap_stream_id']]['metadata'])
